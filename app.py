@@ -30,6 +30,10 @@ def load_mri_model():
     try:
         download_model()  # Ensure the model is downloaded
         model = load_model(MODEL_PATH)
+        
+        # Print model input shape for debugging
+        st.write(f"Model Loaded Successfully! Expected Input Shape: {model.input_shape}")
+        
         return model
     except Exception as e:
         st.error(f"Failed to load MRI model: {e}")
@@ -39,10 +43,20 @@ def load_mri_model():
 def analyze_mri(image, model):
     img = np.array(image.convert('RGB'))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    img_resized = cv2.resize(img, (128, 128)) / 255.0
-    img_resized = img_resized.reshape(1, 128, 128, 1)
+    
+    # Resize image to model's expected input shape
+    expected_shape = model.input_shape[1:3]  # Get height & width from model
+    img_resized = cv2.resize(img, expected_shape) / 255.0
+    
+    # Adjust channels based on model expectations
+    if model.input_shape[-1] == 3:  # If model expects RGB
+        img_resized = np.stack([img_resized] * 3, axis=-1)  # Convert to 3-channel
+    else:
+        img_resized = img_resized.reshape(1, *expected_shape, 1)  # Keep 1 channel
+    
+    # Prediction
     prediction = model.predict(img_resized)
-    predicted_class = np.argmax(prediction, axis=-1)  # For classification problems
+    predicted_class = np.argmax(prediction, axis=-1)
     return predicted_class
 
 # Extract key findings from report using MedSpaCy
