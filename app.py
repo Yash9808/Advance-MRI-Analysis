@@ -78,12 +78,43 @@ def highlight_abnormalities(image):
     cv2.drawContours(highlighted, contours, -1, (255, 0, 0), 2)
     return highlighted
 
+# Function to handle the chat
+def handle_chat(user_input):
+    if "condition" in user_input.lower():
+        return "The MRI scan indicates some possible abnormality. Would you like more details on it?"
+    elif "abnormality" in user_input.lower():
+        return "The highlighted abnormalities are the result of our algorithm detecting potential issues in the MRI."
+    elif "diagnosis" in user_input.lower():
+        return "Based on the model prediction, the diagnosis might include conditions related to the brain. Further clinical evaluation is recommended."
+    else:
+        return "I am here to help with MRI analysis. Feel free to ask any questions related to the MRI scan or the report."
+
 # Streamlit UI
 st.title("MRI Scan Analysis & Report Validation")
 
 # Allow multiple images to be uploaded
 uploaded_images = st.file_uploader("Upload MRI Scans", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 uploaded_report = st.text_area("Paste Radiology Report Text")
+
+# Chat functionality
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+
+# Chatbox UI
+st.header("Chat with the MRI Analysis Assistant")
+user_message = st.text_input("Ask me anything about the MRI Scan or Report:")
+
+if user_message:
+    st.session_state.messages.append({"role": "user", "content": user_message})
+    bot_response = handle_chat(user_message)
+    st.session_state.messages.append({"role": "assistant", "content": bot_response})
+
+# Display chat messages
+for message in st.session_state.messages:
+    if message['role'] == "user":
+        st.markdown(f"**User**: {message['content']}")
+    else:
+        st.markdown(f"**Assistant**: {message['content']}")
 
 if uploaded_images and uploaded_report:
     # Loop through all uploaded images
