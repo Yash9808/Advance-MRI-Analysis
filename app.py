@@ -5,17 +5,34 @@ import pytesseract
 from tensorflow.keras.models import load_model
 from PIL import Image
 import medspacy
+import os
+import requests
 
 # Load MedSpaCy model for medical entity extraction
 nlp = medspacy.load()
 
-# Load Pretrained MRI Analysis Model (Placeholder)
+# Hugging Face model URL (Direct Download Link)
+MODEL_URL = "https://huggingface.co/wizaye/MRI_LLM/resolve/main/brain_model.h5"
+MODEL_PATH = "mri_model.h5"
+
+def download_model():
+    """Download the model from Hugging Face if not available locally."""
+    if not os.path.exists(MODEL_PATH):
+        st.warning("Downloading MRI model... This may take a few minutes.")
+        response = requests.get(MODEL_URL, stream=True)
+        with open(MODEL_PATH, "wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        st.success("Model downloaded successfully!")
+
+# Load Pretrained MRI Analysis Model
 def load_mri_model():
     try:
-        model = load_model("mri_model.h5")  # Replace with actual model file
+        download_model()  # Ensure the model is downloaded
+        model = load_model(MODEL_PATH)
         return model
     except Exception as e:
-        st.error("Failed to load MRI model. Please ensure the model file is available.")
+        st.error(f"Failed to load MRI model: {e}")
         st.stop()
 
 # Process MRI Image and Detect Abnormalities
@@ -31,7 +48,6 @@ def analyze_mri(image, model):
 # Extract key findings from report using MedSpaCy
 def extract_findings(report_text):
     doc = nlp(report_text)
-    # Extract medical entities such as disease, diagnosis, anatomical structure
     findings = [ent.text for ent in doc.ents if ent.label_ in ["DISEASE", "TREATMENT", "ANATOMICAL_STRUCTURE"]]
     return findings
 
