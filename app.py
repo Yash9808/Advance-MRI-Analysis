@@ -48,11 +48,14 @@ def analyze_mri(image, model):
     expected_shape = model.input_shape[1:3]  # Get height & width from model
     img_resized = cv2.resize(img, expected_shape) / 255.0
     
-    # Adjust channels based on model expectations
+    # Adjust channels based on model expectations (ensure it has 3 channels)
     if model.input_shape[-1] == 3:  # If model expects RGB
-        img_resized = np.stack([img_resized] * 3, axis=-1)  # Convert to 3-channel
+        img_resized = np.stack([img_resized] * 3, axis=-1)  # Convert to 3-channel image
     else:
         img_resized = img_resized.reshape(1, *expected_shape, 1)  # Keep 1 channel
+    
+    # Add batch dimension (for single image, batch size = 1)
+    img_resized = np.expand_dims(img_resized, axis=0)  # shape becomes (1, 299, 299, 3) for the model
     
     # Prediction
     prediction = model.predict(img_resized)
@@ -78,25 +81,29 @@ def highlight_abnormalities(image):
 # Streamlit UI
 st.title("MRI Scan Analysis & Report Validation")
 
-uploaded_image = st.file_uploader("Upload MRI Scan", type=["png", "jpg", "jpeg"])
+# Allow multiple images to be uploaded
+uploaded_images = st.file_uploader("Upload MRI Scans", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 uploaded_report = st.text_area("Paste Radiology Report Text")
 
-if uploaded_image and uploaded_report:
-    st.image(uploaded_image, caption="Uploaded MRI Scan", use_column_width=True)
-    image = Image.open(uploaded_image)
+if uploaded_images and uploaded_report:
+    # Loop through all uploaded images
     model = load_mri_model()
     
-    # Analyze MRI
-    prediction = analyze_mri(image, model)
-    st.write(f"Predicted Condition: {prediction}")
+    for uploaded_image in uploaded_images:
+        st.image(uploaded_image, caption=f"Uploaded MRI Scan", use_column_width=True)
+        image = Image.open(uploaded_image)
+        
+        # Analyze each MRI image
+        prediction = analyze_mri(image, model)
+        st.write(f"Predicted Condition for this MRI: {prediction}")
+        
+        # Highlight abnormalities
+        highlighted_img = highlight_abnormalities(image)
+        st.image(highlighted_img, caption="Highlighted Abnormalities", use_column_width=True)
     
     # Extract Findings from Report
     findings = extract_findings(uploaded_report)
     st.write("Extracted Findings from Report:", findings)
-    
-    # Highlight abnormalities
-    highlighted_img = highlight_abnormalities(image)
-    st.image(highlighted_img, caption="Highlighted Abnormalities", use_column_width=True)
     
     # Comparison
     st.write("Comparison of MRI vs. Report Findings")
@@ -106,4 +113,4 @@ if uploaded_image and uploaded_report:
     else:
         st.write("MRI and Report Findings Match!")
 else:
-    st.warning("Please upload both an MRI scan and a radiology report.")
+    st.warning("Please upload both MRI scans and a radiology report.")
