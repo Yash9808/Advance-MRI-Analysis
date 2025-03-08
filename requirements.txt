@@ -1,7 +1,7 @@
-tensorflow==2.10.0
+tensorflow==2.17.1  # or downgrade Python to use 2.10.0
 streamlit==1.29.0
 opencv-python-headless==4.6.0.66
 numpy
 pytesseract
 pillow
-spacy==3.0.0
+spacy  # Install the latest compatible version
