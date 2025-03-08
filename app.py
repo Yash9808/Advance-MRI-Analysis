@@ -117,6 +117,22 @@ def handle_chat(user_input):
     else:
         return "I am here to assist with MRI analysis. Please ask any questions related to the MRI scan or the report."
 
+# Adding Background GIF using CSS
+st.markdown("""
+    <style>
+        .reportview-container {
+            background-image: url('https://raw.githubusercontent.com/Yash9808/MRI-Image-Report-Analysis/main/MRI_brain_scan.gif');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            position: absolute;
+            width: 100%;
+            z-index: -1;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Streamlit UI
 st.title("MRI Scan Analysis & Report Validation")
 
