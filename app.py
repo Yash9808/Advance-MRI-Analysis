@@ -80,26 +80,42 @@ def highlight_abnormalities(image):
 
 # Function to handle the chat and provide more informative responses
 def handle_chat(user_input):
-    if "condition" in user_input.lower() or "disease" in user_input.lower():
+    # Detect keywords related to medical conditions
+    if "stroke" in user_input.lower():
         return (
-            "The MRI scan could potentially detect various conditions such as:\n"
+            "Stroke occurs when blood flow to part of the brain is interrupted, causing brain cell damage. "
+            "There are two main types of strokes:\n"
+            "- Ischemic Stroke: A blockage in a blood vessel reduces blood flow to the brain.\n"
+            "- Hemorrhagic Stroke: Caused by bleeding into the brain.\n"
+            "MRI can identify damaged areas in the brain caused by both types of stroke."
+        )
+    elif "brain hemorrhage" in user_input.lower():
+        return (
+            "A brain hemorrhage refers to bleeding within the brain. Types include:\n"
+            "- Subdural Hematoma: Bleeding between the brain and its outer covering.\n"
+            "- Intracerebral Hemorrhage: Bleeding within the brain tissue.\n"
+            "MRI scans can help identify and assess the extent of bleeding in the brain."
+        )
+    elif "condition" in user_input.lower() or "disease" in user_input.lower():
+        return (
+            "The MRI scan can detect various conditions, including:\n"
             "- Brain Tumors (benign or malignant)\n"
-            "- Multiple Sclerosis (MS)\n"
-            "- Alzheimer's Disease\n"
             "- Stroke and Brain Hemorrhages\n"
+            "- Alzheimer's Disease\n"
             "- Epilepsy\n"
+            "- Multiple Sclerosis (MS)\n"
             "- Infections like encephalitis or abscesses\n"
             "- Parkinson's Disease\n"
             "- Hydrocephalus (fluid buildup in the brain)\n"
             "- Traumatic Brain Injury (TBI)\n"
-            "\nWould you like more information about any specific condition?"
+            "Would you like more details on any of these conditions?"
         )
     elif "abnormality" in user_input.lower():
-        return "The highlighted abnormalities are the result of our algorithm detecting potential issues in the MRI."
+        return "The highlighted abnormalities are based on algorithmic detection in the MRI. Would you like more details on these?"
     elif "diagnosis" in user_input.lower():
-        return "Based on the model prediction, the diagnosis might include conditions related to the brain. Further clinical evaluation is recommended."
+        return "Based on the model's analysis, the MRI could show brain-related conditions, but further clinical evaluation is needed for a definitive diagnosis."
     else:
-        return "I am here to help with MRI analysis. Feel free to ask any questions related to the MRI scan or the report."
+        return "I am here to assist with MRI analysis. Please ask any questions related to the MRI scan or the report."
 
 # Streamlit UI
 st.title("MRI Scan Analysis & Report Validation")
