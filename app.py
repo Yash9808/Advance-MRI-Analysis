@@ -78,10 +78,22 @@ def highlight_abnormalities(image):
     cv2.drawContours(highlighted, contours, -1, (255, 0, 0), 2)
     return highlighted
 
-# Function to handle the chat
+# Function to handle the chat and provide more informative responses
 def handle_chat(user_input):
-    if "condition" in user_input.lower():
-        return "The MRI scan indicates some possible abnormality. Would you like more details on it?"
+    if "condition" in user_input.lower() or "disease" in user_input.lower():
+        return (
+            "The MRI scan could potentially detect various conditions such as:\n"
+            "- Brain Tumors (benign or malignant)\n"
+            "- Multiple Sclerosis (MS)\n"
+            "- Alzheimer's Disease\n"
+            "- Stroke and Brain Hemorrhages\n"
+            "- Epilepsy\n"
+            "- Infections like encephalitis or abscesses\n"
+            "- Parkinson's Disease\n"
+            "- Hydrocephalus (fluid buildup in the brain)\n"
+            "- Traumatic Brain Injury (TBI)\n"
+            "\nWould you like more information about any specific condition?"
+        )
     elif "abnormality" in user_input.lower():
         return "The highlighted abnormalities are the result of our algorithm detecting potential issues in the MRI."
     elif "diagnosis" in user_input.lower():
