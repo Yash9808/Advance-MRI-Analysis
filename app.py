@@ -40,20 +40,21 @@ def load_mri_model():
 # Process MRI Image and Detect Abnormalities
 def analyze_mri(image, model):
     img = np.array(image.convert('RGB'))
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)  # Convert to grayscale
     
     expected_shape = model.input_shape[1:3]  
-    img_resized = cv2.resize(img, expected_shape) / 255.0
+    img_resized = cv2.resize(img_gray, expected_shape) / 255.0
     
     if model.input_shape[-1] == 3:
-        img_resized = np.stack([img_resized] * 3, axis=-1)  
+        img_resized = np.stack([img_resized] * 3, axis=-1)
     else:
         img_resized = img_resized.reshape(1, *expected_shape, 1)
     
-    img_resized = np.expand_dims(img_resized, axis=0)  
+    img_resized = np.expand_dims(img_resized, axis=0)
     prediction = model.predict(img_resized)
     predicted_class = np.argmax(prediction, axis=-1)
-    return predicted_class
+    
+    return predicted_class, img_gray  # Return prediction & processed grayscale image
 
 # Highlight abnormalities in MRI image
 def highlight_abnormalities(image):
@@ -88,10 +89,22 @@ uploaded_image = st.file_uploader("Upload MRI Scan", type=["png", "jpg", "jpeg"]
 if uploaded_image and question:
     model = load_mri_model()
     image = Image.open(uploaded_image)
-    st.image(uploaded_image, caption="Uploaded MRI Scan", use_column_width=True)
 
-    prediction = analyze_mri(image, model)
+    # Get prediction and processed grayscale image
+    prediction, processed_img = analyze_mri(image, model)
     highlighted_img = highlight_abnormalities(image)
+
+    # Display images side by side
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.image(uploaded_image, caption="Original MRI Scan", use_column_width=True)
+
+    with col2:
+        st.image(processed_img, caption="Processed (Grayscale) MRI", use_column_width=True, channels="GRAY")
+
+    with col3:
+        st.image(highlighted_img, caption="Highlighted Abnormalities", use_column_width=True)
 
     # Display the results based on the question
     st.subheader("🔍 MRI Analysis Result")
