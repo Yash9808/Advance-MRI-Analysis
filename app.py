@@ -134,18 +134,23 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Streamlit UI
-st.title("MRI Scan Analysis & Report Validation")
+st.title("🧠 MRI Scan Analysis & Report Validation")
 
-# Allow multiple images to be uploaded
-uploaded_images = st.file_uploader("Upload MRI Scans", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-uploaded_report = st.text_area("Paste Radiology Report Text")
-
-# Chat functionality
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
+# Recommended Questions
+st.subheader("🔍 Recommended Questions")
+st.markdown("""
+- **What conditions can an MRI detect?**  
+- **Can an MRI detect a stroke?**  
+- **What are the signs of a brain tumor in an MRI?**  
+- **How does an MRI differentiate between hemorrhage and stroke?**  
+- **What does an abnormal MRI scan mean?**  
+- **Can an MRI detect Alzheimer's disease?**  
+- **What do white spots on an MRI indicate?**  
+- **How accurate is MRI for diagnosing brain diseases?**  
+""")
 
 # Chatbox UI
-st.header("Chat with the MRI Analysis Assistant")
+st.header("💬 Chat with the MRI Analysis Assistant")
 user_message = st.text_input("Ask me anything about the MRI Scan or Report:")
 
 if user_message:
@@ -160,32 +165,20 @@ for message in st.session_state.messages:
     else:
         st.markdown(f"**Assistant**: {message['content']}")
 
+# File upload
+uploaded_images = st.file_uploader("Upload MRI Scans", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+uploaded_report = st.text_area("Paste Radiology Report Text")
+
 if uploaded_images and uploaded_report:
-    # Loop through all uploaded images
     model = load_mri_model()
-    
     for uploaded_image in uploaded_images:
-        st.image(uploaded_image, caption=f"Uploaded MRI Scan", use_column_width=True)
+        st.image(uploaded_image, caption="Uploaded MRI Scan", use_column_width=True)
         image = Image.open(uploaded_image)
-        
-        # Analyze each MRI image
         prediction = analyze_mri(image, model)
-        st.write(f"Predicted Condition for this MRI: {prediction}")
-        
-        # Highlight abnormalities
+        st.write(f"Predicted Condition: {prediction}")
         highlighted_img = highlight_abnormalities(image)
         st.image(highlighted_img, caption="Highlighted Abnormalities", use_column_width=True)
-    
-    # Extract Findings from Report
     findings = extract_findings(uploaded_report)
-    st.write("Extracted Findings from Report:", findings)
-    
-    # Comparison
-    st.write("Comparison of MRI vs. Report Findings")
-    discrepancies = set([str(prediction)]) - set(findings)  # Convert prediction to string for comparison
-    if discrepancies:
-        st.write("Discrepancies Found:", discrepancies)
-    else:
-        st.write("MRI and Report Findings Match!")
+    st.write("Extracted Findings:", findings)
 else:
     st.warning("Please upload both MRI scans and a radiology report.")
