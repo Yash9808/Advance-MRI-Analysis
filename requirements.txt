@@ -9,3 +9,4 @@ medspacy
 matplotlib
 torch
 transformers
+sklearn
