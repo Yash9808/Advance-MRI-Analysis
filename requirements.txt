@@ -8,3 +8,6 @@ spacy
 medspacy
 matplotlib
 torch==2.0.0  # Or specify another version compatible with your setup
+torch==2.0.0  # You can specify the version, or leave it without to get the latest version
+torchvision==0.15.0
+torchaudio==2.0.0
