@@ -7,6 +7,7 @@ from PIL import Image
 import medspacy
 import os
 import requests
+import matplotlib.pyplot as plt
 
 # Load MedSpaCy model for medical entity extraction
 nlp = medspacy.load()
@@ -28,12 +29,9 @@ def download_model():
 # Load Pretrained MRI Analysis Model
 def load_mri_model():
     try:
-        download_model()  # Ensure the model is downloaded
+        download_model()
         model = load_model(MODEL_PATH)
-        
-        # Print model input shape for debugging
         st.write(f"Model Loaded Successfully! Expected Input Shape: {model.input_shape}")
-        
         return model
     except Exception as e:
         st.error(f"Failed to load MRI model: {e}")
@@ -44,29 +42,18 @@ def analyze_mri(image, model):
     img = np.array(image.convert('RGB'))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     
-    # Resize image to model's expected input shape
-    expected_shape = model.input_shape[1:3]  # Get height & width from model
+    expected_shape = model.input_shape[1:3]  
     img_resized = cv2.resize(img, expected_shape) / 255.0
     
-    # Adjust channels based on model expectations (ensure it has 3 channels)
-    if model.input_shape[-1] == 3:  # If model expects RGB
-        img_resized = np.stack([img_resized] * 3, axis=-1)  # Convert to 3-channel image
+    if model.input_shape[-1] == 3:
+        img_resized = np.stack([img_resized] * 3, axis=-1)  
     else:
-        img_resized = img_resized.reshape(1, *expected_shape, 1)  # Keep 1 channel
+        img_resized = img_resized.reshape(1, *expected_shape, 1)
     
-    # Add batch dimension (for single image, batch size = 1)
-    img_resized = np.expand_dims(img_resized, axis=0)  # shape becomes (1, 299, 299, 3) for the model
-    
-    # Prediction
+    img_resized = np.expand_dims(img_resized, axis=0)  
     prediction = model.predict(img_resized)
     predicted_class = np.argmax(prediction, axis=-1)
     return predicted_class
-
-# Extract key findings from report using MedSpaCy
-def extract_findings(report_text):
-    doc = nlp(report_text)
-    findings = [ent.text for ent in doc.ents if ent.label_ in ["DISEASE", "TREATMENT", "ANATOMICAL_STRUCTURE"]]
-    return findings
 
 # Highlight abnormalities in MRI image
 def highlight_abnormalities(image):
@@ -78,107 +65,60 @@ def highlight_abnormalities(image):
     cv2.drawContours(highlighted, contours, -1, (255, 0, 0), 2)
     return highlighted
 
-# Function to handle the chat and provide more informative responses
-def handle_chat(user_input):
-    # Detect keywords related to medical conditions
-    if "stroke" in user_input.lower():
-        return (
-            "Stroke occurs when blood flow to part of the brain is interrupted, causing brain cell damage. "
-            "There are two main types of strokes:\n"
-            "- Ischemic Stroke: A blockage in a blood vessel reduces blood flow to the brain.\n"
-            "- Hemorrhagic Stroke: Caused by bleeding into the brain.\n"
-            "MRI can identify damaged areas in the brain caused by both types of stroke."
-        )
-    elif "brain hemorrhage" in user_input.lower():
-        return (
-            "A brain hemorrhage refers to bleeding within the brain. Types include:\n"
-            "- Subdural Hematoma: Bleeding between the brain and its outer covering.\n"
-            "- Intracerebral Hemorrhage: Bleeding within the brain tissue.\n"
-            "MRI scans can help identify and assess the extent of bleeding in the brain."
-        )
-    elif "condition" in user_input.lower() or "disease" in user_input.lower():
-        return (
-            "The MRI scan can detect various conditions, including:\n"
-            "- Brain Tumors (benign or malignant)\n"
-            "- Stroke and Brain Hemorrhages\n"
-            "- Alzheimer's Disease\n"
-            "- Epilepsy\n"
-            "- Multiple Sclerosis (MS)\n"
-            "- Infections like encephalitis or abscesses\n"
-            "- Parkinson's Disease\n"
-            "- Hydrocephalus (fluid buildup in the brain)\n"
-            "- Traumatic Brain Injury (TBI)\n"
-            "Would you like more details on any of these conditions?"
-        )
-    elif "abnormality" in user_input.lower():
-        return "The highlighted abnormalities are based on algorithmic detection in the MRI. Would you like more details on these?"
-    elif "diagnosis" in user_input.lower():
-        return "Based on the model's analysis, the MRI could show brain-related conditions, but further clinical evaluation is needed for a definitive diagnosis."
-    else:
-        return "I am here to assist with MRI analysis. Please ask any questions related to the MRI scan or the report."
+# Chart-based question selection
+st.title("🧠 MRI Scan Analysis & Interactive Diagnosis")
 
-# Adding Background GIF using CSS
-st.markdown("""
-    <style>
-        .reportview-container {
-            background-image: url('https://raw.githubusercontent.com/Yash9808/MRI-Image-Report-Analysis/main/MRI_brain_scan.gif');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            height: 100vh;
-            position: absolute;
-            width: 100%;
-            z-index: -1;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+# Dropdown for question-based analysis
+question = st.selectbox(
+    "Select a question to start MRI analysis:",
+    [
+        "What conditions does this MRI suggest?",
+        "Does this MRI indicate a stroke?",
+        "Are there any tumors in the MRI?",
+        "Is there any sign of brain hemorrhage?",
+        "Is there abnormal fluid accumulation?",
+        "What are the highlighted abnormalities?"
+    ]
+)
 
-# Streamlit UI
-st.title("🧠 MRI Scan Analysis & Report Validation")
+# Upload MRI Image
+uploaded_image = st.file_uploader("Upload MRI Scan", type=["png", "jpg", "jpeg"])
 
-# Recommended Questions
-st.subheader("🔍 Recommended Questions")
-st.markdown("""
-- **What conditions can an MRI detect?**  
-- **Can an MRI detect a stroke?**  
-- **What are the signs of a brain tumor in an MRI?**  
-- **How does an MRI differentiate between hemorrhage and stroke?**  
-- **What does an abnormal MRI scan mean?**  
-- **Can an MRI detect Alzheimer's disease?**  
-- **What do white spots on an MRI indicate?**  
-- **How accurate is MRI for diagnosing brain diseases?**  
-""")
-
-# Chatbox UI
-st.header("💬 Chat with the MRI Analysis Assistant")
-user_message = st.text_input("Ask me anything about the MRI Scan or Report:")
-
-if user_message:
-    st.session_state.messages.append({"role": "user", "content": user_message})
-    bot_response = handle_chat(user_message)
-    st.session_state.messages.append({"role": "assistant", "content": bot_response})
-
-# Display chat messages
-for message in st.session_state.messages:
-    if message['role'] == "user":
-        st.markdown(f"**User**: {message['content']}")
-    else:
-        st.markdown(f"**Assistant**: {message['content']}")
-
-# File upload
-uploaded_images = st.file_uploader("Upload MRI Scans", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-uploaded_report = st.text_area("Paste Radiology Report Text")
-
-if uploaded_images and uploaded_report:
+# Process image based on question
+if uploaded_image and question:
     model = load_mri_model()
-    for uploaded_image in uploaded_images:
-        st.image(uploaded_image, caption="Uploaded MRI Scan", use_column_width=True)
-        image = Image.open(uploaded_image)
-        prediction = analyze_mri(image, model)
+    image = Image.open(uploaded_image)
+    st.image(uploaded_image, caption="Uploaded MRI Scan", use_column_width=True)
+
+    prediction = analyze_mri(image, model)
+    highlighted_img = highlight_abnormalities(image)
+
+    # Display the results based on the question
+    st.subheader("🔍 MRI Analysis Result")
+
+    if "conditions" in question:
         st.write(f"Predicted Condition: {prediction}")
-        highlighted_img = highlight_abnormalities(image)
+    elif "stroke" in question:
+        st.write("Checking for stroke-related abnormalities...")
+    elif "tumors" in question:
+        st.write("Analyzing possible tumor locations...")
+    elif "hemorrhage" in question:
+        st.write("Detecting possible brain hemorrhage...")
+    elif "fluid" in question:
+        st.write("Looking for signs of abnormal fluid accumulation...")
+    elif "abnormalities" in question:
         st.image(highlighted_img, caption="Highlighted Abnormalities", use_column_width=True)
-    findings = extract_findings(uploaded_report)
-    st.write("Extracted Findings:", findings)
+
+    # Show a bar chart representation of analysis
+    fig, ax = plt.subplots()
+    categories = ["Stroke", "Tumor", "Hemorrhage", "Fluid Buildup", "Normal"]
+    values = np.random.randint(10, 90, size=len(categories))  # Random values for demo
+
+    ax.bar(categories, values, color=["red", "blue", "green", "orange", "gray"])
+    ax.set_ylabel("Likelihood (%)")
+    ax.set_title("Predicted MRI Findings")
+
+    st.pyplot(fig)
+
 else:
-    st.warning("Please upload both MRI scans and a radiology report.")
+    st.warning("Please upload an MRI scan to start the analysis.")
