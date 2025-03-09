@@ -66,6 +66,19 @@ def highlight_abnormalities(image):
     cv2.drawContours(highlighted, contours, -1, (255, 0, 0), 2)
     return highlighted
 
+# Function to analyze report text and compare with AI prediction
+def analyze_report(report_text, predicted_condition):
+    """Compare the user-provided report with the AI prediction and return a confidence score."""
+    report_keywords = report_text.lower().split()
+    predicted_keywords = str(predicted_condition).lower().split()
+
+    # Calculate similarity score
+    match_count = sum(1 for word in predicted_keywords if word in report_keywords)
+    total_keywords = len(predicted_keywords) if predicted_keywords else 1
+    confidence_score = (match_count / total_keywords) * 10
+
+    return round(confidence_score, 1)
+
 # Chart-based question selection
 st.title("🧠 MRI Scan Analysis & Interactive Diagnosis")
 
@@ -132,6 +145,19 @@ if uploaded_image and question:
     ax.set_title("Predicted MRI Findings")
 
     st.pyplot(fig)
+
+    # User inputs a medical report for comparison
+    st.subheader("📄 Report Analysis & Verification")
+    report_text = st.text_area("Paste the radiology report here for AI comparison:")
+
+    if report_text:
+        confidence_score = analyze_report(report_text, prediction)
+
+        # Display confidence score
+        st.write(f"🔎 AI vs. Report Match Score: **{confidence_score}/10**")
+
+        # Show progress bar based on score
+        st.progress(int(confidence_score))
 
 else:
     st.warning("Please upload an MRI scan to start the analysis.")
