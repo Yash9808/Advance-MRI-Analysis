@@ -6,3 +6,4 @@ pytesseract
 pillow
 spacy  # Install the latest compatible version
 medspacy
+matplotlib
